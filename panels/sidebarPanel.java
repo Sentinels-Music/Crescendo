@@ -5,42 +5,71 @@ import javax.swing.*;
 
 
 public class sidebarPanel extends JPanel {
-
-    public sidebarPanel(){
-        initializeSideBar();
+    public sidebarPanel() {
+        initializeSidebar();
     }
 
-    private void initializeSideBar(){
-        // constants
-        Color logoColor = new Color(211, 175, 55);
-        Font logoFont = new Font("SansSerif", Font.BOLD, 32);
-        Font navButtonFont = new Font("SansSerif", Font.BOLD, 16);
+    private void initializeSidebar() {
+        //constants
+        final Color backgroundColor = new Color(20,20,20);
+        final Color goldColor = new Color(212,175,55);
+        final Color navButtonColor = Color.WHITE;
+        final Font logoFont = new Font("SansSerif",Font.BOLD,32);
+        final Font navButtonFont = new Font("SansSerif", Font.BOLD, 16);
+        final Font profileLabelFont = new Font("SansSerif", Font.BOLD, 14);
+        final Font verifiedLabelFont = new Font("SansSerif", Font.ITALIC, 12);
+        final Dimension panelSize = new Dimension(200,700);
         
-        //Panel basics
-        setBackground(Color.BLACK);
-        setPreferredSize(new Dimension(200,700));
+
+        //panel basics
+        setBackground(backgroundColor);
+        setPreferredSize(panelSize);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        
+        //setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Padding
 
-        //App logo
-        JLabel logoLabel = new JLabel("CRESCENDO");
-        logoLabel.setForeground(logoColor);
+        //logo
+        JLabel logoLabel = new JLabel("Crescendo");
+        logoLabel.setForeground(goldColor); 
         logoLabel.setFont(logoFont);
+        logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
         add(logoLabel);
+        //add(Box.createVerticalStrut(40)); // Large space below logo
 
-        // Buttons for Navigating through app
-        String[] navigatingButtons = {"Home", "Discover", "Listen Later"};
-        for (String item : navigatingButtons) {
+        //buttons for navigatin between pages;
+        String[] navItems = {"Home", "Discover", "Listen Later"};
+        for (String item : navItems) {
             JButton navButton = new JButton(item);
             navButton.setFont(navButtonFont);
-            
+            navButton.setForeground(navButtonColor);
+            // deletes default button border colors
+            navButton.setBorderPainted(false); 
+            navButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+            navButton.setHorizontalAlignment(SwingConstants.LEFT);       
+            add(navButton);
 
-            
         }
-        
 
-    }
-    public static void main(String[] args) {
-        JFrame frame = new JFrame();
+        // puts profile section to bottom
+        add(Box.createVerticalGlue()); 
+
+        // User profile
+        JLabel profileLabel = new JLabel("mustafa");
+        profileLabel.setForeground(Color.WHITE);
+        profileLabel.setFont(profileLabelFont);
         
+        JLabel verifiedLabel = new JLabel("Verified");
+        verifiedLabel.setForeground(goldColor);
+        verifiedLabel.setFont(verifiedLabelFont);
+
+        JPanel profilePanel = new JPanel();
+        profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
+        profilePanel.setBackground(backgroundColor);
+        profilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        profilePanel.add(profileLabel);
+        profilePanel.add(verifiedLabel);
+
+        add(profilePanel);
     }
 }
