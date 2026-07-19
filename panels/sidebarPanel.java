@@ -35,7 +35,6 @@ public class sidebarPanel extends JPanel {
         logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
         add(logoLabel);
-        //add(Box.createVerticalStrut(40)); // Large space below logo
 
         //buttons for navigatin between pages;
         String[] navItems = {"Home", "Discover", "Listen Later"};

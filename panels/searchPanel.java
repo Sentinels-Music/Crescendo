@@ -1,7 +1,10 @@
 package panels;
 
 import java.awt.*;
+import java.util.List;
+
 import javax.swing.*;
+ 
 
 
 public class searchPanel {
@@ -21,6 +24,7 @@ public class searchPanel {
         final Font searchTitleFont = new Font("SansSerif", Font.BOLD, 32);
         final Font searchFieldFont = new Font("SansSerif", Font.PLAIN, 18);
         final Font filterButtonFont = new Font("SansSerif", Font.PLAIN, 14);
+        
         // search frame
         frame = new JFrame("Crescendo - Search");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -44,7 +48,6 @@ public class searchPanel {
         //search label
         JLabel searchTitle = new JLabel("Find anything");
         searchTitle.setFont(searchTitleFont);
-        
         
         //search Field
         searchField = new JTextField();
@@ -73,12 +76,66 @@ public class searchPanel {
         headerPanel.add(filterPanel);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
+        
+        DefaultListModel<controllers.SearchResult> listModel = new DefaultListModel<>();
+        JList<controllers.SearchResult> resultList = new JList<>(listModel);
+        resultList.setCellRenderer(new searchResultRenderer()); 
+        JScrollPane scrollPane = new JScrollPane(resultList);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+
+        searchField.addActionListener(e -> {
+            String query = searchField.getText();
+            
+            String selectedFilter = "All";
+            for (java.util.Enumeration<AbstractButton> buttons = filterGroup.getElements(); buttons.hasMoreElements();) {
+                AbstractButton button = buttons.nextElement();
+                if (button.isSelected()) {
+                    selectedFilter = button.getText();
+                    break;
+                }
+            }
+
+            final String finalFilter = selectedFilter; 
+            listModel.clear();
+            listModel.addElement(new controllers.SearchResult("Searching...", "", "",0.00)); 
+            SwingWorker<List<controllers.SearchResult>, Void> worker = new SwingWorker<>() {
+                @Override
+                protected List<controllers.SearchResult> doInBackground() throws Exception {
+                    controllers.SearchController controller = new controllers.SearchController();
+                    return controller.searchMusicItem(query, finalFilter);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        List<controllers.SearchResult> results = get();
+                        listModel.clear(); 
+                        
+                        if (results.isEmpty()) {
+                            listModel.addElement(new controllers.SearchResult("No results found.", "", "",0.00));
+                        } else {
+                            for (controllers.SearchResult result : results) {
+                                // Add the actual object, not result.toString()
+                                listModel.addElement(result); 
+                            }
+                        }
+                    } catch (Exception ex) {
+                        listModel.clear();
+                        listModel.addElement(new controllers.SearchResult("Error retrieving results.", "", "",0.00));
+                        ex.printStackTrace();
+                    }
+                }
+            };
+            
+            worker.execute();
+        });
+
 
         // adding sidebar left and mainpanel center
         frame.add(sidebar, BorderLayout.WEST);
         frame.add(mainPanel, BorderLayout.CENTER);
     }
-
     public void show() {
         frame.setVisible(true);
     }
