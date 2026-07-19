@@ -1,148 +1,182 @@
 package panels;
 
-import java.awt.*;
+import controllers.SearchController;
+import controllers.SearchResult;
+import javafx.application.Application;
+import javafx.concurrent.Task;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
 import java.util.List;
 
-import javax.swing.*;
- 
-
-
-public class searchPanel {
-    private JFrame frame;
-    private JPanel mainPanel;
-    private JTextField searchField;
-    private ButtonGroup filterGroup;
+public class searchPanel extends BorderPane {
+    private TextField searchField;
+    private ToggleGroup filterGroup;
+    private HBox filterBar;
+    private ListView<SearchResult> resultsListView;
+    private Label placeholderLabel;
 
     public searchPanel() {
         initializeUI();
     }
 
     private void initializeUI() {
-        //constants
-        final Dimension panelSize = new Dimension(1000,700);
-        final Color whiteColor = Color.WHITE;
-        final Font searchTitleFont = new Font("SansSerif", Font.BOLD, 32);
-        final Font searchFieldFont = new Font("SansSerif", Font.PLAIN, 18);
-        final Font filterButtonFont = new Font("SansSerif", Font.PLAIN, 14);
-        
-        // search frame
-        frame = new JFrame("Crescendo - Search");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(panelSize);
-        frame.setLayout(new BorderLayout());
+        setStyle("-fx-background-color: #FFFFFF;");
 
-        //calls sidebar
         sidebarPanel sidebar = new sidebarPanel();
+        setLeft(sidebar);
 
-        //mainPanel
-        mainPanel = new JPanel();
-        mainPanel.setBackground(whiteColor);
-        mainPanel.setLayout(new BorderLayout()); 
+        VBox mainContent = new VBox();
+        mainContent.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 30 40 20 40; -fx-spacing: 15;");
+        mainContent.setAlignment(Pos.TOP_LEFT);
 
-        //header panel
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 20, 40)); 
+        Label searchTitle = new Label("Find anything");
+        searchTitle.setStyle(
+                "-fx-font-family: 'SansSerif'; -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #000000;");
 
-        //search label
-        JLabel searchTitle = new JLabel("Find anything");
-        searchTitle.setFont(searchTitleFont);
-        
-        //search Field
-        searchField = new JTextField();
-        searchField.setFont(searchFieldFont);
+        searchField = new TextField();
+        searchField.setPromptText("Search artists, albums, songs, people...");
 
-        //filters
-        JPanel filterPanel = new JPanel();
-        filterPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0)); 
-        filterPanel.setBackground(whiteColor);
-        filterPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        String normalFieldStyle = "-fx-font-family: 'SansSerif'; -fx-font-size: 18px; -fx-padding: 10; -fx-background-color: #FAFAFA; -fx-border-color: #CCCCCC; -fx-border-radius: 5; -fx-background-radius: 5;";
+        String focusedFieldStyle = "-fx-font-family: 'SansSerif'; -fx-font-size: 18px; -fx-padding: 10; -fx-background-color: #FAFAFA; -fx-border-color: #D4AF37; -fx-border-radius: 5; -fx-background-radius: 5;";
 
-        //filter types
-        String[] filters = {"All", "Artists", "Albums", "Songs", "People"};
-        filterGroup = new ButtonGroup(); 
-
-        for (String filter : filters) {
-            JToggleButton filterButton = new JToggleButton(filter);
-            filterButton.setFont(filterButtonFont);
-
-            filterGroup.add(filterButton); 
-            filterPanel.add(filterButton); 
-        }
-
-        headerPanel.add(searchTitle);
-        headerPanel.add(searchField);
-        headerPanel.add(filterPanel);
-
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
-        
-        DefaultListModel<controllers.SearchResult> listModel = new DefaultListModel<>();
-        JList<controllers.SearchResult> resultList = new JList<>(listModel);
-        resultList.setCellRenderer(new searchResultRenderer()); 
-        JScrollPane scrollPane = new JScrollPane(resultList);
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
-
-
-        searchField.addActionListener(e -> {
-            String query = searchField.getText();
-            
-            String selectedFilter = "All";
-            for (java.util.Enumeration<AbstractButton> buttons = filterGroup.getElements(); buttons.hasMoreElements();) {
-                AbstractButton button = buttons.nextElement();
-                if (button.isSelected()) {
-                    selectedFilter = button.getText();
-                    break;
-                }
+        searchField.setStyle(normalFieldStyle);
+        searchField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (isNowFocused) {
+                searchField.setStyle(focusedFieldStyle);
+            } else {
+                searchField.setStyle(normalFieldStyle);
             }
-
-            final String finalFilter = selectedFilter; 
-            listModel.clear();
-            listModel.addElement(new controllers.SearchResult("Searching...", "", "",0.00)); 
-            SwingWorker<List<controllers.SearchResult>, Void> worker = new SwingWorker<>() {
-                @Override
-                protected List<controllers.SearchResult> doInBackground() throws Exception {
-                    controllers.SearchController controller = new controllers.SearchController();
-                    return controller.searchMusicItem(query, finalFilter);
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        List<controllers.SearchResult> results = get();
-                        listModel.clear(); 
-                        
-                        if (results.isEmpty()) {
-                            listModel.addElement(new controllers.SearchResult("No results found.", "", "",0.00));
-                        } else {
-                            for (controllers.SearchResult result : results) {
-                                // Add the actual object, not result.toString()
-                                listModel.addElement(result); 
-                            }
-                        }
-                    } catch (Exception ex) {
-                        listModel.clear();
-                        listModel.addElement(new controllers.SearchResult("Error retrieving results.", "", "",0.00));
-                        ex.printStackTrace();
-                    }
-                }
-            };
-            
-            worker.execute();
         });
 
+        HBox.setHgrow(searchField, Priority.ALWAYS);
 
-        // adding sidebar left and mainpanel center
-        frame.add(sidebar, BorderLayout.WEST);
-        frame.add(mainPanel, BorderLayout.CENTER);
+        filterBar = new HBox();
+        filterBar.setSpacing(10);
+        filterBar.setAlignment(Pos.CENTER_LEFT);
+
+        filterGroup = new ToggleGroup();
+        String[] filters = { "All", "Artists", "Albums", "Songs", "People" };
+
+        for (String filter : filters) {
+            ToggleButton filterButton = new ToggleButton(filter);
+            filterButton.setToggleGroup(filterGroup);
+            if (filter.equals("All")) {
+                filterButton.setSelected(true);
+            }
+            filterBar.getChildren().add(filterButton);
+        }
+        applyFilterButtonStyles();
+
+        resultsListView = new ListView<>();
+        resultsListView.setStyle(
+                "-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; -fx-border-color: transparent;");
+        resultsListView.setCellFactory(listView -> new searchResultRenderer());
+
+        placeholderLabel = new Label("Type a query and press enter to search.");
+        placeholderLabel.setStyle(
+                "-fx-font-family: 'SansSerif'; -fx-font-size: 16px; -fx-font-style: italic; -fx-text-fill: #888888;");
+        resultsListView.setPlaceholder(placeholderLabel);
+
+        VBox.setVgrow(resultsListView, Priority.ALWAYS);
+
+        mainContent.getChildren().addAll(searchTitle, searchField, filterBar, resultsListView);
+        setCenter(mainContent);
+
+        searchField.setOnAction(e -> performSearch());
+
+        filterGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                applyFilterButtonStyles();
+                performSearch();
+            } else if (oldVal != null) {
+                oldVal.setSelected(true);
+            }
+        });
     }
-    public void show() {
-        frame.setVisible(true);
+
+    private void applyFilterButtonStyles() {
+        for (javafx.scene.Node node : filterBar.getChildren()) {
+            if (node instanceof ToggleButton) {
+                ToggleButton btn = (ToggleButton) node;
+                if (btn.isSelected()) {
+                    btn.setStyle(
+                            "-fx-background-color: #D4AF37; -fx-text-fill: #FFFFFF; -fx-font-family: 'SansSerif'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 6 12 6 12; -fx-cursor: hand;");
+                } else {
+                    btn.setStyle(
+                            "-fx-background-color: #EEEEEE; -fx-text-fill: #333333; -fx-font-family: 'SansSerif'; -fx-font-size: 14px; -fx-background-radius: 15; -fx-padding: 6 12 6 12; -fx-cursor: hand;");
+                }
+            }
+        }
+    }
+
+    private void performSearch() {
+        String query = searchField.getText().trim();
+
+        ToggleButton selectedButton = (ToggleButton) filterGroup.getSelectedToggle();
+        String filterType = selectedButton != null ? selectedButton.getText() : "All";
+
+        resultsListView.getItems().clear();
+
+        if (query.isEmpty()) {
+            placeholderLabel.setText("Type a query and press enter to search.");
+            return;
+        }
+
+        placeholderLabel.setText("Searching...");
+
+        Task<List<SearchResult>> searchTask = new Task<>() {
+            @Override
+            protected List<SearchResult> call() throws Exception {
+                SearchController searchController = new SearchController();
+                return searchController.searchMusicItem(query, filterType);
+            }
+        };
+
+        searchTask.setOnSucceeded(e -> {
+            List<SearchResult> results = searchTask.getValue();
+            if (results.isEmpty()) {
+                placeholderLabel.setText("No results found.");
+            } else {
+                resultsListView.getItems().setAll(results);
+            }
+        });
+
+        searchTask.setOnFailed(e -> {
+            placeholderLabel.setText("Error retrieving results.");
+            Throwable ex = searchTask.getException();
+            if (ex != null) {
+                ex.printStackTrace();
+            }
+        });
+
+        Thread thread = new Thread(searchTask);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    public static class Launcher extends Application {
+        @Override
+        public void start(Stage primaryStage) {
+            try {
+                searchPanel root = new searchPanel();
+                Scene scene = new Scene(root, 1000, 700);
+                primaryStage.setTitle("Crescendo - Search");
+                primaryStage.setScene(scene);
+                primaryStage.show();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void main(String[] args) {
-        searchPanel searchPanel = new searchPanel();
-        searchPanel.show();
+        Application.launch(Launcher.class, args);
     }
-    
 }

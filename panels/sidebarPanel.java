@@ -1,74 +1,59 @@
 package panels;
 
-import java.awt.*;
-import javax.swing.*;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
+public class sidebarPanel extends VBox {
 
-public class sidebarPanel extends JPanel {
     public sidebarPanel() {
         initializeSidebar();
     }
 
     private void initializeSidebar() {
-        //constants
-        final Color backgroundColor = new Color(20,20,20);
-        final Color goldColor = new Color(212,175,55);
-        final Color navButtonColor = Color.WHITE;
-        final Font logoFont = new Font("SansSerif",Font.BOLD,32);
-        final Font navButtonFont = new Font("SansSerif", Font.BOLD, 16);
-        final Font profileLabelFont = new Font("SansSerif", Font.BOLD, 14);
-        final Font verifiedLabelFont = new Font("SansSerif", Font.ITALIC, 12);
-        final Dimension panelSize = new Dimension(200,700);
-        
+        setStyle("-fx-background-color: #141414; -fx-padding: 30 20 30 20; -fx-spacing: 15;");
+        setPrefWidth(200);
 
-        //panel basics
-        setBackground(backgroundColor);
-        setPreferredSize(panelSize);
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        
-        //setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Padding
+        Label logoLabel = new Label("Crescendo");
+        logoLabel.setStyle(
+                "-fx-font-family: 'SansSerif'; -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #D4AF37; -fx-padding: 0 0 20 0;");
+        getChildren().add(logoLabel);
 
-        //logo
-        JLabel logoLabel = new JLabel("Crescendo");
-        logoLabel.setForeground(goldColor); 
-        logoLabel.setFont(logoFont);
-        logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        add(logoLabel);
-
-        //buttons for navigatin between pages;
-        String[] navItems = {"Home", "Discover", "Listen Later"};
+        String[] navItems = { "Home", "Discover", "Listen Later" };
         for (String item : navItems) {
-            JButton navButton = new JButton(item);
-            navButton.setFont(navButtonFont);
-            navButton.setForeground(navButtonColor);
-            // deletes default button border colors
-            navButton.setBorderPainted(false); 
-            navButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-            navButton.setHorizontalAlignment(SwingConstants.LEFT);       
-            add(navButton);
+            Button navButton = new Button(item);
+            String normalStyle = "-fx-background-color: transparent; -fx-text-fill: #FFFFFF; -fx-font-family: 'SansSerif'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-alignment: center-left; -fx-padding: 10 15 10 15; -fx-background-radius: 6; -fx-cursor: hand;";
+            String hoverStyle = "-fx-background-color: #2D2D2D; -fx-text-fill: #D4AF37; -fx-font-family: 'SansSerif'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-alignment: center-left; -fx-padding: 10 15 10 15; -fx-background-radius: 6; -fx-cursor: hand;";
 
+            navButton.setStyle(normalStyle);
+            navButton.setMaxWidth(Double.MAX_VALUE);
+
+            navButton.setOnMouseEntered(e -> navButton.setStyle(hoverStyle));
+            navButton.setOnMouseExited(e -> navButton.setStyle(normalStyle));
+
+            getChildren().add(navButton);
         }
 
-        // puts profile section to bottom
-        add(Box.createVerticalGlue()); 
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+        getChildren().add(spacer);
 
-        // User profile
-        JLabel profileLabel = new JLabel("mustafa");
-        profileLabel.setForeground(Color.WHITE);
-        profileLabel.setFont(profileLabelFont);
-        
-        JLabel verifiedLabel = new JLabel("Verified");
-        verifiedLabel.setForeground(goldColor);
-        verifiedLabel.setFont(verifiedLabelFont);
+        Label profileLabel = new Label("mustafa");
+        profileLabel.setStyle(
+                "-fx-text-fill: #FFFFFF; -fx-font-family: 'SansSerif'; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-        JPanel profilePanel = new JPanel();
-        profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
-        profilePanel.setBackground(backgroundColor);
-        profilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        profilePanel.add(profileLabel);
-        profilePanel.add(verifiedLabel);
+        Label verifiedLabel = new Label("Verified");
+        verifiedLabel.setStyle(
+                "-fx-text-fill: #D4AF37; -fx-font-family: 'SansSerif'; -fx-font-size: 12px; -fx-font-style: italic; -fx-font-weight: bold;");
 
-        add(profilePanel);
+        VBox profilePanel = new VBox(profileLabel, verifiedLabel);
+        profilePanel.setStyle(
+                "-fx-background-color: #242424; -fx-padding: 12 15 12 15; -fx-background-radius: 8; -fx-spacing: 4;");
+        profilePanel.setAlignment(Pos.CENTER_LEFT);
+
+        getChildren().add(profilePanel);
     }
 }

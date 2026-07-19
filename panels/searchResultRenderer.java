@@ -1,73 +1,108 @@
 package panels;
 
 import controllers.SearchResult;
-import java.awt.*;
-import javax.swing.*;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 
-public class searchResultRenderer extends JPanel implements ListCellRenderer<SearchResult> {
-    private JLabel titleLabel = new JLabel();
-    private JLabel infoLabel = new JLabel();
-    private JLabel typeLabel = new JLabel();
-    private JLabel ratingLabel = new JLabel();
+public class searchResultRenderer extends ListCell<SearchResult> {
+    private final BorderPane card = new BorderPane();
+    private final Label titleLabel = new Label();
+    private final Label infoLabel = new Label();
+    private final Label typeLabel = new Label();
+    private final Label ratingLabel = new Label();
 
     public searchResultRenderer() {
-        Font titleLabelFont = new Font("SansSerif", Font.BOLD, 16);
-        Font typeLabelFont = new Font("SansSerif", Font.ITALIC, 12);
-        Font infoLabelFont = new Font("SansSerif", Font.PLAIN, 14);
-        Font ratingLabelFont = new Font("SansSerif", Font.PLAIN, 14);
+        super();
 
-        Color ratingLabelColor = new Color(212, 175, 55);
-        Color typeLabelColor = Color.GRAY;
+        VBox leftPanel = new VBox(titleLabel, infoLabel);
+        leftPanel.setSpacing(5);
+        leftPanel.setAlignment(Pos.CENTER_LEFT);
 
-        setLayout(new BorderLayout(10, 5));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        setBackground(Color.WHITE);
+        VBox rightPanel = new VBox(typeLabel, ratingLabel);
+        rightPanel.setSpacing(5);
+        rightPanel.setAlignment(Pos.CENTER_RIGHT);
 
-        titleLabel.setFont(titleLabelFont);
-        typeLabel.setFont(typeLabelFont);
-        typeLabel.setForeground(typeLabelColor);
-        infoLabel.setFont(infoLabelFont);
-        
-        ratingLabel.setFont(ratingLabelFont);
-        ratingLabel.setForeground(ratingLabelColor); 
+        card.setLeft(leftPanel);
+        card.setRight(rightPanel);
 
-        // left side of panel
-        JPanel textPanel = new JPanel(new GridLayout(2, 1));
-        textPanel.setOpaque(false);
-        textPanel.add(titleLabel);
-        textPanel.add(infoLabel);
+        card.setStyle(
+                "-fx-background-color: #FFFFFF; -fx-padding: 10 10 10 10; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
 
-        // right side of panel
-        JPanel rightPanel = new JPanel(new GridLayout(2, 1));
-        rightPanel.setOpaque(false);
-        typeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        ratingLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        rightPanel.add(typeLabel);
-        rightPanel.add(ratingLabel);
+        titleLabel.setStyle(
+                "-fx-font-family: 'SansSerif'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #000000;");
+        infoLabel.setStyle("-fx-font-family: 'SansSerif'; -fx-font-size: 14px; -fx-text-fill: #555555;");
+        typeLabel.setStyle(
+                "-fx-font-family: 'SansSerif'; -fx-font-size: 12px; -fx-font-style: italic; -fx-text-fill: #808080;");
+        ratingLabel.setStyle(
+                "-fx-font-family: 'SansSerif'; -fx-font-size: 14px; -fx-text-fill: #D4AF37; -fx-font-weight: bold;");
 
-        add(textPanel, BorderLayout.CENTER);
-        add(rightPanel, BorderLayout.EAST);
+        card.setOnMouseEntered(e -> {
+            if (!isSelected()) {
+                card.setStyle(
+                        "-fx-background-color: #F8F8F8; -fx-padding: 10 10 10 10; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0; -fx-cursor: hand;");
+            }
+        });
+        card.setOnMouseExited(e -> {
+            if (!isSelected()) {
+                card.setStyle(
+                        "-fx-background-color: #FFFFFF; -fx-padding: 10 10 10 10; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
+            }
+        });
     }
 
     @Override
-    public Component getListCellRendererComponent(JList<? extends SearchResult> list, SearchResult value, int index, boolean isSelected, boolean cellHasFocus) {
-        titleLabel.setText(value.getTitle());
-        typeLabel.setText(value.getType().toUpperCase());
-        infoLabel.setText(value.getAdditionalInfo());
+    protected void updateItem(SearchResult item, boolean empty) {
+        super.updateItem(item, empty);
 
-        if (value.getType().equalsIgnoreCase("User") || value.getAverageRating() == 0.0) {
-            ratingLabel.setText("");
+        if (empty || item == null) {
+            setGraphic(null);
+            setText(null);
+            setStyle("-fx-background-color: transparent;");
         } else {
+            titleLabel.setText(item.getTitle());
+            typeLabel.setText(item.getType().toUpperCase());
+            infoLabel.setText(item.getAdditionalInfo());
 
-            ratingLabel.setText(getStarString(value.getAverageRating()) + "  " + String.format("%.1f", value.getAverageRating()));
+            if (item.getType().equalsIgnoreCase("User") || item.getAverageRating() == 0.0) {
+                ratingLabel.setText("");
+                ratingLabel.setVisible(false);
+                ratingLabel.setManaged(false);
+            } else {
+                ratingLabel.setText(
+                        getStarString(item.getAverageRating()) + "  " + String.format("%.1f", item.getAverageRating()));
+                ratingLabel.setVisible(true);
+                ratingLabel.setManaged(true);
+            }
+
+            updateCellStyles();
+            setGraphic(card);
+            setText(null);
         }
+    }
 
-        if (isSelected) {
-            setBackground(new Color(240, 240, 240));
+    @Override
+    public void updateSelected(boolean selected) {
+        super.updateSelected(selected);
+        updateCellStyles();
+    }
+
+    private void updateCellStyles() {
+        if (getItem() != null) {
+            if (isSelected()) {
+                card.setStyle(
+                        "-fx-background-color: #E8E8E8; -fx-padding: 10 10 10 10; -fx-border-color: #D4AF37; -fx-border-width: 0 0 1 0;");
+                setStyle("-fx-background-color: #E8E8E8;");
+            } else {
+                card.setStyle(
+                        "-fx-background-color: #FFFFFF; -fx-padding: 10 10 10 10; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;");
+                setStyle("-fx-background-color: #FFFFFF;");
+            }
         } else {
-            setBackground(Color.WHITE);
+            setStyle("-fx-background-color: transparent;");
         }
-        return this;
     }
 
     private String getStarString(double rating) {
