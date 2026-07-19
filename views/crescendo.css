@@ -1,0 +1,261 @@
+/* Crescendo shared styles — black / white / gold palette (UI Design Report) */
+
+.root {
+    -fx-font-family: "SansSerif";
+}
+
+/* ---------- Auth screens (Login / Register) ---------- */
+
+.auth-bg {
+    -fx-background-color: #F2F2F2;
+}
+
+.auth-card {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 10;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 10;
+    -fx-padding: 30 40 30 40;
+    -fx-spacing: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 14, 0, 0, 4);
+}
+
+.tab-active {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
+}
+
+.tab-inactive {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #AAAAAA;
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.field-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #666666;
+}
+
+.text-input {
+    -fx-font-size: 15px;
+    -fx-padding: 8;
+    -fx-background-color: #FAFAFA;
+    -fx-border-color: #CCCCCC;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.text-input:focused {
+    -fx-border-color: #D4AF37;
+}
+
+.primary-button {
+    -fx-background-color: #111111;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+    -fx-max-width: infinity;
+}
+
+.register-button {
+    -fx-background-color: #5B5BD6;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+    -fx-max-width: infinity;
+}
+
+.link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #5B5BD6;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.error-label {
+    -fx-text-fill: #C0392B;
+    -fx-font-size: 13px;
+}
+
+.info-label {
+    -fx-text-fill: #2E7D32;
+    -fx-font-size: 13px;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar {
+    -fx-background-color: #141414;
+    -fx-padding: 30 20 30 20;
+    -fx-spacing: 12;
+    -fx-pref-width: 200;
+}
+
+.logo {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #D4AF37;
+    -fx-padding: 0 0 16 0;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-alignment: center-left;
+    -fx-padding: 10 15 10 15;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-max-width: infinity;
+}
+
+.nav-button:hover {
+    -fx-background-color: #2D2D2D;
+    -fx-text-fill: #D4AF37;
+}
+
+.nav-button-active {
+    -fx-background-color: #D4AF37;
+    -fx-text-fill: #FFFFFF;
+}
+
+.mini-profile {
+    -fx-background-color: #242424;
+    -fx-padding: 12 15 12 15;
+    -fx-background-radius: 8;
+    -fx-spacing: 4;
+}
+
+.mini-name {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.mini-verified {
+    -fx-text-fill: #D4AF37;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Profile page ---------- */
+
+.content-bg {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 26 40 20 40;
+}
+
+.avatar {
+    -fx-background-color: #D4AF37;
+    -fx-background-radius: 60;
+    -fx-min-width: 64;
+    -fx-min-height: 64;
+    -fx-max-width: 64;
+    -fx-max-height: 64;
+    -fx-alignment: center;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #FFFFFF;
+}
+
+.username-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
+}
+
+.verified-badge {
+    -fx-text-fill: #D4AF37;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.bio-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #555555;
+}
+
+.stat-number {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
+}
+
+.stat-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #888888;
+}
+
+.section-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #888888;
+}
+
+.edit-button {
+    -fx-background-color: #111111;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+
+.review-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
+}
+
+.review-comment {
+    -fx-font-size: 13px;
+    -fx-text-fill: #555555;
+}
+
+.stars {
+    -fx-text-fill: #D4AF37;
+    -fx-font-size: 14px;
+}
+
+.following-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
+}
+
+.taste-match {
+    -fx-font-size: 12px;
+    -fx-text-fill: #888888;
+}
+
+.following-button {
+    -fx-background-color: #EEEEEE;
+    -fx-text-fill: #333333;
+    -fx-font-size: 12px;
+    -fx-background-radius: 14;
+    -fx-padding: 5 12 5 12;
+    -fx-cursor: hand;
+}
+
+.search-bar {
+    -fx-font-size: 14px;
+    -fx-padding: 8 12 8 12;
+    -fx-background-color: #FAFAFA;
+    -fx-border-color: #DDDDDD;
+    -fx-border-radius: 18;
+    -fx-background-radius: 18;
+}
