@@ -1,31 +1,40 @@
 package model;
 
-import java.util.Map;
-import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Song extends MusicItem {
     private int durationInSeconds;
-    private Map<String, String> streamingLinks;
+    private List<StreamingLink> streamingLinks;
 
-    public Song(int itemId, String title, int durationInSeconds) {
-        super(itemId, title);
+    public Song(int itemId, String title, int durationInSeconds, double averageRating) {
+        super(itemId, title, averageRating);
         this.durationInSeconds = durationInSeconds;
-        this.streamingLinks = new HashMap<>();
+        this.streamingLinks = new ArrayList<>();
     }
 
-    public void addStreamingLink(String platform, String url) {
-        streamingLinks.put(platform, url);
+    public int getDurationInSeconds() {
+        return durationInSeconds;
     }
 
-    public void removeStreamingLink(String platform) {
-        streamingLinks.remove(platform);
+    public String getFormattedDuration() {
+        int minutes = durationInSeconds / 60;
+        int seconds = durationInSeconds % 60;
+        return minutes + ":" + String.format("%02d", seconds);
     }
 
-    public String getStreamingLink(String platform) {
-        return streamingLinks.get(platform);
+    public void addStreamingLink(StreamingLink link) {
+        streamingLinks.add(link);
     }
 
-    public Map<String, String> getStreamingLinks() {
+    public StreamingLink getStreamingLink() {
+        if (streamingLinks.isEmpty()) {
+            return null;
+        }
+        return streamingLinks.get(0);
+    }
+
+    public List<StreamingLink> getStreamingLinks() {
         return streamingLinks;
     }
 

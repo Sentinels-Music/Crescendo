@@ -10,12 +10,24 @@ public abstract class MusicItem implements ListenLaterItem {
     protected List<Review> reviews;
     protected List<User> listenLaterUsers;
 
-    public MusicItem(int itemId, String title) {
+    public MusicItem(int itemId, String title, double averageRating) {
         this.itemId = itemId;
         this.title = title;
-        this.averageRating = 0.0;
+        this.averageRating = averageRating;
         this.reviews = new ArrayList<>();
         this.listenLaterUsers = new ArrayList<>();
+    }
+
+    public int getItemId() {
+        return itemId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public double getAverageRating() {
+        return averageRating;
     }
 
     public void addReview(Review review) {
@@ -34,7 +46,6 @@ public abstract class MusicItem implements ListenLaterItem {
 
     public double calculateAverageRating() {
         if (reviews.isEmpty()) {
-            averageRating = 0.0;
             return averageRating;
         }
         int sum = 0;
