@@ -53,12 +53,12 @@ public class RegisterController {
     }
 
     private void showError(String message) {
-        messageLabel.getStyleClass().setAll("error-label");
+        messageLabel.setStyle("-fx-text-fill: #C0392B; -fx-font-size: 13px;");
         messageLabel.setText(message);
     }
 
     private void showInfo(String message) {
-        messageLabel.getStyleClass().setAll("info-label");
+        messageLabel.setStyle("-fx-text-fill: #2E7D32; -fx-font-size: 13px;");
         messageLabel.setText(message);
     }
 
