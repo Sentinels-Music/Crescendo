@@ -105,13 +105,13 @@ public class ProfileController {
 
     private VBox reviewCard(ReviewSummary r) {
         Label title = new Label(r.getItemTitle());
-        title.getStyleClass().add("review-title");
+        title.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #000000;");
 
         Label stars = new Label(starString(r.getStars()));
-        stars.getStyleClass().add("stars");
+        stars.setStyle("-fx-text-fill: #D4AF37; -fx-font-size: 14px;");
 
         Label comment = new Label(r.getComment() == null ? "" : r.getComment());
-        comment.getStyleClass().add("review-comment");
+        comment.setStyle("-fx-font-size: 13px; -fx-text-fill: #555555;");
         comment.setWrapText(true);
 
         VBox card = new VBox(3, title, stars, comment);
@@ -135,10 +135,10 @@ public class ProfileController {
 
     private HBox followingCard(User user, int tasteMatchPct) {
         Label name = new Label(user.getUsername());
-        name.getStyleClass().add("following-name");
+        name.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #000000;");
 
         Label match = new Label(tasteMatchPct + "% taste match");
-        match.getStyleClass().add("taste-match");
+        match.setStyle("-fx-font-size: 12px; -fx-text-fill: #888888;");
 
         VBox text = new VBox(2, name, match);
 
@@ -146,7 +146,7 @@ public class ProfileController {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button followBtn = new Button("Following");
-        followBtn.getStyleClass().add("following-button");
+        followBtn.setStyle("-fx-background-color: #EEEEEE; -fx-text-fill: #333333; -fx-font-size: 12px; -fx-background-radius: 14; -fx-padding: 5 12 5 12; -fx-cursor: hand;");
         followBtn.setOnAction(e -> toggleFollow(user, followBtn));
 
         HBox card = new HBox(10, text, spacer, followBtn);
@@ -214,7 +214,7 @@ public class ProfileController {
     // ---- small helpers ----
     private Label mutedLabel(String text) {
         Label l = new Label(text);
-        l.getStyleClass().add("taste-match");
+        l.setStyle("-fx-font-size: 12px; -fx-text-fill: #888888;");
         return l;
     }
 
