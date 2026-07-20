@@ -1,4 +1,4 @@
-package emirui;
+package panels;
 
 import java.util.ArrayList;
 import java.util.List;
