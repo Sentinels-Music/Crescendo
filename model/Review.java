@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
  * @author Efe Anık
  */
 
-public class Review {
+public class Review implements Comparable<Review> {
 
     private int reviewId;
     private User author;
@@ -152,6 +152,18 @@ public class Review {
     public int getPriorityScore() {
         priorityScore = calculatePriorityScore(author, createdAt);
         return priorityScore;
+    }
+
+    // Compares reviews by priority score and creation date in descending order.
+    @Override
+    public int compareTo(Review other) {
+        int result = other.getPriorityScore() - getPriorityScore();
+
+        if(result != 0) {
+            return result;
+        }
+
+        return other.getCreatedAt().compareTo(getCreatedAt());
     }
 
     @Override
