@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launcher",
+            "request": "launch",
+            "mainClass": "com.crescendo.Launcher",
+            "projectName": "crescendo_ec04b852"
+        },
+        {
+            "type": "java",
+            "name": "Crescendo (Main)",
+            "request": "launch",
+            "mainClass": "com.crescendo.Main",
+            "projectName": "crescendo"
+        },
+        {
+            "type": "java",
+            "name": "Crescendo (Launcher with JavaFX SDK)",
+            "request": "launch",
+            "mainClass": "com.crescendo.Launcher",
+            "vmArgs": "--module-path lib/openjfx --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base",
+            "projectName": "crescendo"
+        }
+    ]
+}
