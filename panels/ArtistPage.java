@@ -112,7 +112,9 @@ public class ArtistPage extends Application {
         HBox userCard = new HBox(12);
         userCard.setAlignment(Pos.CENTER_LEFT);
         userCard.setPrefSize(202, 62);
-        userCard.setStyle("-fx-background-color: #22211C; -fx-background-radius: 18; -fx-padding: 10 12 10 12;");
+        userCard.setStyle("-fx-background-color: #22211C; -fx-background-radius: 18;"
+                + " -fx-padding: 10 12 10 12; -fx-cursor: hand;");
+        userCard.setOnMouseClicked(e -> views.SceneNavigator.switchTo(stage, "ProfileView.fxml"));
         AnchorPane.setLeftAnchor(userCard, 20.0);
         AnchorPane.setBottomAnchor(userCard, 24.0);
         Circle avatar = new Circle(21, Color.web("#8B8B83"));
