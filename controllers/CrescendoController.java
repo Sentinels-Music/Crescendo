@@ -24,11 +24,11 @@ public class CrescendoController {
     }
 
     public void goProfile(ActionEvent event) {
-        navigate((Node) event.getSource(), "ProfilePage.fxml");
+        navigate((Node) event.getSource(), "ProfileView.fxml");
     }
 
     public void goProfile(MouseEvent event) {
-        navigate((Node) event.getSource(), "ProfilePage.fxml");
+        navigate((Node) event.getSource(), "ProfileView.fxml");
     }
 
     public void closeWindow(ActionEvent event) {
