@@ -1,136 +1,245 @@
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.shape.SVGPath?>
 
 <AnchorPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="CrescendoController"
-            prefWidth="933"
-            prefHeight="695"
-            style="-fx-background-color: #F6F1E8;">
+            prefWidth="933.0"
+            prefHeight="695.0"
+            style="-fx-background-color: #F6F1E8; -fx-font-family: 'Segoe UI', 'Arial', sans-serif;">
 
-    <AnchorPane prefWidth="242"
-                AnchorPane.topAnchor="0"
-                AnchorPane.bottomAnchor="0"
-                AnchorPane.leftAnchor="0"
+    <AnchorPane prefWidth="242.0"
+                AnchorPane.topAnchor="0.0"
+                AnchorPane.bottomAnchor="0.0"
+                AnchorPane.leftAnchor="0.0"
                 style="-fx-background-color: #171713; -fx-background-radius: 0 10 10 0;">
 
         <Label text="Crescendo"
-               layoutX="20"
-               layoutY="38"
+               layoutX="20.0"
+               layoutY="38.0"
                textFill="#F4D66A"
                style="-fx-font-size: 30px; -fx-font-weight: bold;" />
 
-        <VBox layoutX="20"
-              layoutY="106"
-              spacing="16"
-              prefWidth="202">
+        <VBox layoutX="20.0"
+              layoutY="106.0"
+              spacing="16.0"
+              prefWidth="202.0">
 
             <Button text="Home"
-                    prefWidth="202"
-                    prefHeight="50"
+                    prefWidth="202.0"
+                    prefHeight="50.0"
                     alignment="CENTER_LEFT"
-                    style="-fx-background-color: #E2AE3F;
-                           -fx-text-fill: #11110E;
-                           -fx-font-size: 15px;
-                           -fx-font-weight: bold;
-                           -fx-background-radius: 14;
-                           -fx-padding: 0 0 0 18;" />
+                    style="-fx-background-color: #E2AE3F; -fx-text-fill: #11110E; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 14; -fx-padding: 0 0 0 18; -fx-cursor: hand;" />
 
             <Button text="Discover"
-                    prefWidth="202"
-                    prefHeight="46"
+                    prefWidth="202.0"
+                    prefHeight="46.0"
                     alignment="CENTER_LEFT"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #EEE6D8;
-                           -fx-font-size: 15px;
-                           -fx-padding: 0 0 0 18;" />
+                    style="-fx-background-color: transparent; -fx-text-fill: #EEE6D8; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 0 0 0 18; -fx-cursor: hand;" />
 
             <Button text="Listen Later"
-                    prefWidth="202"
-                    prefHeight="46"
+                    prefWidth="202.0"
+                    prefHeight="46.0"
                     alignment="CENTER_LEFT"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #EEE6D8;
-                           -fx-font-size: 15px;
-                           -fx-padding: 0 0 0 18;" />
-
+                    style="-fx-background-color: transparent; -fx-text-fill: #EEE6D8; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 0 0 0 18; -fx-cursor: hand;" />
         </VBox>
 
-        <HBox spacing="12"
+        <HBox spacing="12.0"
               alignment="CENTER_LEFT"
-              prefWidth="202"
-              prefHeight="62"
-              AnchorPane.leftAnchor="20"
-              AnchorPane.bottomAnchor="24"
-              style="-fx-background-color: #22211C;
-                     -fx-background-radius: 18;
-                     -fx-padding: 10 12 10 12;">
+              prefWidth="202.0"
+              prefHeight="62.0"
+              AnchorPane.leftAnchor="20.0"
+              AnchorPane.bottomAnchor="24.0"
+              style="-fx-background-color: #22211C; -fx-background-radius: 18; -fx-padding: 10 12 10 12; -fx-cursor: hand;">
 
-            <Button prefWidth="42"
-                    prefHeight="42"
-                    style="-fx-background-color: transparent;
-                           -fx-padding: 0;
-                           -fx-background-radius: 21;
-                           -fx-border-color: transparent;">
-                <graphic>
-                    <Circle radius="21"
-                            fill="#8B8B83" />
-                </graphic>
-            </Button>
+            <StackPane prefWidth="42.0" prefHeight="42.0">
+                <Circle radius="21.0" fill="#8B8B83" />
+                <Label text="M"
+                       textFill="WHITE"
+                       style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+            </StackPane>
 
-            <VBox spacing="2">
-                <Label text="Example User"
+            <VBox spacing="2.0">
+                <Label fx:id="sidebarName"
+                       text="mustafa"
                        textFill="#F6F1E8"
                        style="-fx-font-size: 14px; -fx-font-weight: bold;" />
-
-                <Label text="Verified"
+                <Label fx:id="sidebarVerified"
+                       text="Verified"
                        textFill="#E2AE3F"
                        style="-fx-font-size: 12px; -fx-font-weight: bold;" />
             </VBox>
-
         </HBox>
-
     </AnchorPane>
 
     <HBox alignment="CENTER_LEFT"
-          spacing="10"
-          prefWidth="310"
-          prefHeight="42"
-          AnchorPane.topAnchor="32"
-          AnchorPane.rightAnchor="72"
-          style="-fx-background-color: white;
-                 -fx-background-radius: 18;
-                 -fx-border-color: #E4D8C2;
-                 -fx-border-radius: 18;
-                 -fx-padding: 0 14 0 14;">
+          spacing="10.0"
+          prefWidth="310.0"
+          prefHeight="42.0"
+          AnchorPane.topAnchor="32.0"
+          AnchorPane.rightAnchor="72.0"
+          style="-fx-background-color: white; -fx-background-radius: 18; -fx-border-color: #E4D8C2; -fx-border-radius: 18; -fx-padding: 0 14 0 14;">
 
         <SVGPath content="M9.5 3 C5.9 3 3 5.9 3 9.5 C3 13.1 5.9 16 9.5 16 C11 16 12.4 15.5 13.5 14.7 L17.4 18.6 C17.8 19 18.4 19 18.8 18.6 C19.2 18.2 19.2 17.6 18.8 17.2 L14.9 13.3 C15.6 12.2 16 10.9 16 9.5 C16 5.9 13.1 3 9.5 3 Z M9.5 5 C12 5 14 7 14 9.5 C14 12 12 14 9.5 14 C7 14 5 12 5 9.5 C5 7 7 5 9.5 5 Z"
                  fill="#737373"
                  scaleX="0.9"
                  scaleY="0.9" />
 
-        <TextField promptText="Search artists, albums and songs..."
-                   prefWidth="240"
-                   prefHeight="38"
-                   style="-fx-background-color: transparent;
-                          -fx-border-color: transparent;
-                          -fx-font-size: 14px;
-                          -fx-prompt-text-fill: #8A8A8A;" />
-
+        <TextField fx:id="searchField"
+                   promptText="Search artists, albums and songs..."
+                   prefWidth="240.0"
+                   prefHeight="38.0"
+                   style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-font-size: 14px; -fx-prompt-text-fill: #8A8A8A;" />
     </HBox>
 
     <Button text="×"
-            prefWidth="32"
-            prefHeight="32"
-            AnchorPane.topAnchor="12"
-            AnchorPane.rightAnchor="14"
+            prefWidth="32.0"
+            prefHeight="32.0"
+            AnchorPane.topAnchor="12.0"
+            AnchorPane.rightAnchor="14.0"
             onAction="#closeWindow"
-            style="-fx-background-color: #D94141;
-                   -fx-text-fill: white;
-                   -fx-font-size: 18px;
-                   -fx-font-weight: bold;
-                   -fx-background-radius: 10;
-                   -fx-padding: 0;" />
+            style="-fx-background-color: #D94141; -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 0; -fx-cursor: hand;" />
+
+    <ScrollPane fitToWidth="true"
+                hbarPolicy="NEVER"
+                vbarPolicy="AS_NEEDED"
+                AnchorPane.topAnchor="104.0"
+                AnchorPane.leftAnchor="278.0"
+                AnchorPane.rightAnchor="24.0"
+                AnchorPane.bottomAnchor="22.0"
+                style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+
+        <content>
+            <VBox fx:id="feedContainer" spacing="0.0" fillWidth="true">
+                <padding>
+                    <Insets top="0.0" right="8.0" bottom="20.0" left="0.0" />
+                </padding>
+
+                <Label text="Y O U R   F E E D"
+                       textFill="#B8892A"
+                       style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+
+                <Label text="From people you follow"
+                       textFill="#171713"
+                       style="-fx-font-size: 31px; -fx-font-weight: bold; -fx-padding: 3 0 18 0;" />
+
+                <HBox spacing="14.0" alignment="TOP_LEFT" style="-fx-padding: 0 0 15 0;">
+                    <StackPane prefWidth="58.0" prefHeight="58.0" minWidth="58.0" minHeight="58.0"
+                               style="-fx-background-color: #171713; -fx-background-radius: 3;">
+                        <Label text="♪" textFill="#D4A12A" style="-fx-font-size: 25px; -fx-font-weight: bold;" />
+                    </StackPane>
+
+                    <VBox spacing="3.0" HBox.hgrow="ALWAYS">
+                        <HBox spacing="4.0" alignment="CENTER_LEFT">
+                            <Label text="elif_k" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                            <Label text="reviewed an album" style="-fx-font-size: 13px; -fx-text-fill: #77736B;" />
+                        </HBox>
+
+                        <HBox spacing="6.0" alignment="CENTER_LEFT">
+                            <Label text="Currents" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                            <Label text="— Tame Impala" style="-fx-font-size: 15px; -fx-font-style: italic; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                        </HBox>
+
+                        <HBox spacing="8.0" alignment="CENTER_LEFT">
+                            <Label text="★★★★☆" textFill="#C18E22" style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+                            <Label text="4.0" textFill="#6F6B63" style="-fx-font-size: 13px;" />
+                        </HBox>
+
+                        <Label text="&quot;A hazy, synth-soaked headphone record. The low end on 'Let It Happen' alone earns the rating.&quot;"
+                               wrapText="true"
+                               maxWidth="520.0"
+                               textFill="#66625B"
+                               style="-fx-font-size: 12px;" />
+
+                        <Label text="2 hours ago  ·  12 likes"
+                               textFill="#AAA59B"
+                               style="-fx-font-size: 11px;" />
+                    </VBox>
+                </HBox>
+
+                <Separator prefWidth="600.0" style="-fx-background-color: #E5DED2;" />
+
+                <HBox spacing="14.0" alignment="TOP_LEFT" style="-fx-padding: 15 0 15 0;">
+                    <StackPane prefWidth="58.0" prefHeight="58.0" minWidth="58.0" minHeight="58.0"
+                               style="-fx-background-color: #171713; -fx-background-radius: 3;">
+                        <Label text="♪" textFill="#D4A12A" style="-fx-font-size: 25px; -fx-font-weight: bold;" />
+                    </StackPane>
+
+                    <VBox spacing="3.0" HBox.hgrow="ALWAYS">
+                        <HBox spacing="4.0" alignment="CENTER_LEFT">
+                            <Label text="can.polat" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                            <Label text="rated a song" style="-fx-font-size: 13px; -fx-text-fill: #77736B;" />
+                        </HBox>
+
+                        <HBox spacing="6.0" alignment="CENTER_LEFT">
+                            <Label text="Teardrop" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                            <Label text="— Massive Attack" style="-fx-font-size: 15px; -fx-font-style: italic; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                        </HBox>
+
+                        <HBox spacing="8.0" alignment="CENTER_LEFT">
+                            <Label text="★★★★★" textFill="#C18E22" style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+                            <Label text="5.0" textFill="#6F6B63" style="-fx-font-size: 13px;" />
+                        </HBox>
+
+                        <Label text="&quot;Trip-hop at its absolute peak. Timeless.&quot;"
+                               textFill="#66625B"
+                               style="-fx-font-size: 12px;" />
+
+                        <Label text="5 hours ago  ·  24 likes"
+                               textFill="#AAA59B"
+                               style="-fx-font-size: 11px;" />
+                    </VBox>
+                </HBox>
+
+                <Separator prefWidth="600.0" style="-fx-background-color: #E5DED2;" />
+
+                <HBox spacing="14.0" alignment="TOP_LEFT" style="-fx-padding: 15 0 0 0;">
+                    <StackPane prefWidth="58.0" prefHeight="58.0" minWidth="58.0" minHeight="58.0"
+                               style="-fx-background-color: #171713; -fx-background-radius: 3;">
+                        <Label text="♪" textFill="#D4A12A" style="-fx-font-size: 25px; -fx-font-weight: bold;" />
+                    </StackPane>
+
+                    <VBox spacing="4.0" HBox.hgrow="ALWAYS">
+                        <HBox spacing="4.0" alignment="CENTER_LEFT">
+                            <Label text="deniz.audio" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+                            <Label text="added a new artist" style="-fx-font-size: 13px; -fx-text-fill: #77736B;" />
+                            <Label text="· Verified" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #B8892A;" />
+                        </HBox>
+
+                        <Label text="Khruangbin"
+                               style="-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #171713;" />
+
+                        <Label text="New to the catalog — be the first to review."
+                               textFill="#66625B"
+                               style="-fx-font-size: 12px;" />
+
+                        <Label text="Yesterday  ·  8 likes"
+                               textFill="#AAA59B"
+                               style="-fx-font-size: 11px;" />
+                    </VBox>
+                </HBox>
+
+                <Region prefHeight="30.0" VBox.vgrow="ALWAYS" />
+            </VBox>
+        </content>
+    </ScrollPane>
+
+    <Label text="Crescendo  ›  Home"
+           textFill="#AAA59B"
+           style="-fx-font-size: 10px;"
+           AnchorPane.rightAnchor="24.0"
+           AnchorPane.bottomAnchor="8.0" />
 
 </AnchorPane>
