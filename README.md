@@ -39,3 +39,7 @@ Crescendo uses an MVC-inspired layered structure:
 * Mustafa Ziya Akyol
 * Ege Yiğit Yıldırım
 * Metehan Karadeniz
+
+## License
+
+Crescendo is licensed under the [Mozilla Public License 2.0](https://github.com/Sentinels-Music/Crescendo/blob/main/LICENSE).
