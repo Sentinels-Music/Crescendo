@@ -581,44 +581,72 @@ public final class Database {
     }
 
     /**
-     * Simple taste-match heuristic: percentage overlap between the two users' followed
-     * artists (shared followed artists / the larger of the two follow-lists). A stand-in
-     * for the full taste-matching algorithm described as Ege Yiğit Yıldırım's JOIN/aggregation work.
+     * Calculates the taste-match percentage using the distinct tags of the artists
+     * followed by each user:
+     *
+     * shared tags / current user's total tags * 100
+     *
+     * The first user is the current user, so the calculation is directional.
      */
-    public static int computeTasteMatch(int userIdA, int userIdB) throws SQLException {
+    public static int computeTasteMatch(int currentUserId, int otherUserId) throws SQLException {
         String sql = "SELECT "
-                + "(SELECT COUNT(*) FROM artist_follows af1 JOIN artist_follows af2 "
-                + "   ON af1.artist_id = af2.artist_id WHERE af1.user_id = ? AND af2.user_id = ?) AS shared, "
-                + "(SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS countA, "
-                + "(SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS countB";
+                + "(SELECT COUNT(DISTINCT at1.tag_id) "
+                + " FROM artist_follows af1 "
+                + " JOIN artist_tags at1 ON at1.artist_id = af1.artist_id "
+                + " WHERE af1.user_id = ? "
+                + " AND EXISTS ("
+                + "     SELECT 1 "
+                + "     FROM artist_follows af2 "
+                + "     JOIN artist_tags at2 ON at2.artist_id = af2.artist_id "
+                + "     WHERE af2.user_id = ? "
+                + "     AND at2.tag_id = at1.tag_id"
+                + " )) AS shared_tags, "
+                + "(SELECT COUNT(DISTINCT at.tag_id) "
+                + " FROM artist_follows af "
+                + " JOIN artist_tags at ON at.artist_id = af.artist_id "
+                + " WHERE af.user_id = ?) AS current_user_tags";
+
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, userIdA);
-            ps.setInt(2, userIdB);
-            ps.setInt(3, userIdA);
-            ps.setInt(4, userIdB);
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, otherUserId);
+            ps.setInt(3, currentUserId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
-                int shared = rs.getInt("shared");
-                int denominator = Math.max(rs.getInt("countA"), rs.getInt("countB"));
-                if (denominator == 0) {
+                int sharedTags = rs.getInt("shared_tags");
+                int currentUserTags = rs.getInt("current_user_tags");
+                if (currentUserTags == 0) {
                     return 0;
                 }
-                return (int) Math.round(100.0 * shared / denominator);
+                return (int) Math.round(100.0 * sharedTags / currentUserTags);
             }
         }
     }
 
-    /** Names of artists both users follow - the "why" behind a taste-match percentage. */
-    public static List<String> getSharedArtistNames(int userIdA, int userIdB) throws SQLException {
-        String sql = "SELECT a.name FROM artist_follows af1 JOIN artist_follows af2 ON af1.artist_id = af2.artist_id "
-                + "JOIN artists a ON a.id = af1.artist_id WHERE af1.user_id = ? AND af2.user_id = ? ORDER BY a.name";
+    /** Returns the shared tags derived from the artists followed by both users. */
+    public static List<String> getSharedTagNames(int currentUserId, int otherUserId) throws SQLException {
+        String sql = "SELECT DISTINCT t.name "
+                + "FROM tags t "
+                + "JOIN artist_tags at1 ON at1.tag_id = t.id "
+                + "JOIN artist_follows af1 ON af1.artist_id = at1.artist_id "
+                + "WHERE af1.user_id = ? "
+                + "AND EXISTS ("
+                + "    SELECT 1 "
+                + "    FROM artist_tags at2 "
+                + "    JOIN artist_follows af2 ON af2.artist_id = at2.artist_id "
+                + "    WHERE af2.user_id = ? "
+                + "    AND at2.tag_id = t.id"
+                + ") "
+                + "ORDER BY t.name";
+
         List<String> names = new ArrayList<>();
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, userIdA);
-            ps.setInt(2, userIdB);
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, otherUserId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    names.add(rs.getString(1));
+                    names.add(rs.getString("name"));
                 }
             }
         }
