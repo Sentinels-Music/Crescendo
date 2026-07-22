@@ -1,6 +1,7 @@
 package com.crescendo.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,8 +25,11 @@ public abstract class MusicItem {
     }
 
     public void addReview(Review review) {
-        reviews.add(review);
-        calculateAverageRating();
+        if (review != null) {
+            reviews.add(review);
+            Collections.sort(reviews);
+            calculateAverageRating();
+        }
     }
 
     public void removeReview(Review review) {

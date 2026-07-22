@@ -83,7 +83,11 @@ public class Artist {
             total += review.getStarRating();
             ratedItems++;
         }
-        averageRating = ratedItems == 0 ? 0.0 : total / ratedItems;
+        if (ratedItems == 0) {
+            averageRating = 0.0;
+        } else {
+            averageRating = total / ratedItems;
+        }
         return averageRating;
     }
 
@@ -91,6 +95,7 @@ public class Artist {
     public void addReview(Review review) {
         if (review != null) {
             reviews.add(review);
+            Collections.sort(reviews);
         }
     }
 
