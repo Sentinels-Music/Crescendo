@@ -19,9 +19,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Owned by Ege Yiğit Yıldırım (Search, Database & Integration), used by every
@@ -374,7 +376,13 @@ public final class Database {
             ps.setInt(3, targetId);
             ps.setInt(4, stars);
             ps.setString(5, comment);
-            ps.setInt(6, verified ? 100 : 1);
+            int priorityScore;
+            if (verified) {
+                priorityScore = 100;
+            } else {
+                priorityScore = 1;
+            }
+            ps.setInt(6, priorityScore);
             ps.executeUpdate();
         }
     }
@@ -461,9 +469,12 @@ public final class Database {
         int id = rs.getInt("id");
         String username = rs.getString("username");
         String passwordHash = rs.getString("password_hash");
-        User user = rs.getBoolean("verified")
-                ? new VerifiedUser(id, username, passwordHash)
-                : new User(id, username, passwordHash);
+        User user;
+        if (rs.getBoolean("verified")) {
+            user = new VerifiedUser(id, username, passwordHash);
+        } else {
+            user = new User(id, username, passwordHash);
+        }
         user.setBio(rs.getString("bio"));
         user.setReviewCount(rs.getInt("review_count"));
         return user;
@@ -568,41 +579,72 @@ public final class Database {
     }
 
     /**
-     * Simple taste-match heuristic: percentage overlap between the two users' followed
-     * artists (shared followed artists / the larger of the two follow-lists). A stand-in
-     * for the full taste-matching algorithm described as Ege Yiğit Yıldırım's JOIN/aggregation work.
+     * Calculates the taste-match percentage using the distinct tags of the artists
+     * followed by each user:
+     *
+     * shared tags / current user's total tags * 100
+     *
+     * The first user is the current user, so the calculation is directional.
      */
-    public static int computeTasteMatch(int userIdA, int userIdB) throws SQLException {
+    public static int computeTasteMatch(int currentUserId, int otherUserId) throws SQLException {
         String sql = "SELECT "
-                + "(SELECT COUNT(*) FROM artist_follows af1 JOIN artist_follows af2 "
-                + "   ON af1.artist_id = af2.artist_id WHERE af1.user_id = ? AND af2.user_id = ?) AS shared, "
-                + "(SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS countA, "
-                + "(SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS countB";
+                + "(SELECT COUNT(DISTINCT at1.tag_id) "
+                + " FROM artist_follows af1 "
+                + " JOIN artist_tags at1 ON at1.artist_id = af1.artist_id "
+                + " WHERE af1.user_id = ? "
+                + " AND EXISTS ("
+                + "     SELECT 1 "
+                + "     FROM artist_follows af2 "
+                + "     JOIN artist_tags at2 ON at2.artist_id = af2.artist_id "
+                + "     WHERE af2.user_id = ? "
+                + "     AND at2.tag_id = at1.tag_id"
+                + " )) AS shared_tags, "
+                + "(SELECT COUNT(DISTINCT at.tag_id) "
+                + " FROM artist_follows af "
+                + " JOIN artist_tags at ON at.artist_id = af.artist_id "
+                + " WHERE af.user_id = ?) AS current_user_tags";
+
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, userIdA);
-            ps.setInt(2, userIdB);
-            ps.setInt(3, userIdA);
-            ps.setInt(4, userIdB);
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, otherUserId);
+            ps.setInt(3, currentUserId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
-                int shared = rs.getInt("shared");
-                int denominator = Math.max(rs.getInt("countA"), rs.getInt("countB"));
-                return denominator == 0 ? 0 : (int) Math.round(100.0 * shared / denominator);
+                int sharedTags = rs.getInt("shared_tags");
+                int currentUserTags = rs.getInt("current_user_tags");
+                if (currentUserTags == 0) {
+                    return 0;
+                }
+                return (int) Math.round(100.0 * sharedTags / currentUserTags);
             }
         }
     }
 
-    /** Names of artists both users follow - the "why" behind a taste-match percentage. */
-    public static List<String> getSharedArtistNames(int userIdA, int userIdB) throws SQLException {
-        String sql = "SELECT a.name FROM artist_follows af1 JOIN artist_follows af2 ON af1.artist_id = af2.artist_id "
-                + "JOIN artists a ON a.id = af1.artist_id WHERE af1.user_id = ? AND af2.user_id = ? ORDER BY a.name";
+    /** Returns the shared tags derived from the artists followed by both users. */
+    public static List<String> getSharedTagNames(int currentUserId, int otherUserId) throws SQLException {
+        String sql = "SELECT DISTINCT t.name "
+                + "FROM tags t "
+                + "JOIN artist_tags at1 ON at1.tag_id = t.id "
+                + "JOIN artist_follows af1 ON af1.artist_id = at1.artist_id "
+                + "WHERE af1.user_id = ? "
+                + "AND EXISTS ("
+                + "    SELECT 1 "
+                + "    FROM artist_tags at2 "
+                + "    JOIN artist_follows af2 ON af2.artist_id = at2.artist_id "
+                + "    WHERE af2.user_id = ? "
+                + "    AND at2.tag_id = t.id"
+                + ") "
+                + "ORDER BY t.name";
+
         List<String> names = new ArrayList<>();
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, userIdA);
-            ps.setInt(2, userIdB);
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, otherUserId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    names.add(rs.getString(1));
+                    names.add(rs.getString("name"));
                 }
             }
         }
@@ -686,7 +728,7 @@ public final class Database {
                         Album album = new Album(rs.getInt("id"), rs.getString("title"), artist, rs.getInt("release_year"));
                         albumsById.put(album.getItemId(), album);
                         artist.addMusicItem(album);
-                        loadReviewsInto(connection, "ALBUM", album.getItemId(), album::addReview);
+                        loadReviewsInto(connection, "ALBUM", album.getItemId(), new AlbumReviewConsumer(album));
                     }
                 }
             }
@@ -698,7 +740,7 @@ public final class Database {
                     while (rs.next()) {
                         Song song = new Song(rs.getInt("id"), rs.getString("title"), artist, rs.getInt("duration_seconds"));
                         loadStreamingLinksInto(connection, song);
-                        loadReviewsInto(connection, "SONG", song.getItemId(), song::addReview);
+                        loadReviewsInto(connection, "SONG", song.getItemId(), new SongReviewConsumer(song));
                         artist.addMusicItem(song);
                         int albumId = rs.getInt("album_id");
                         if (!rs.wasNull() && albumsById.containsKey(albumId)) {
@@ -708,7 +750,7 @@ public final class Database {
                 }
             }
 
-            loadReviewsInto(connection, "ARTIST", artistId, artist::addReview);
+            loadReviewsInto(connection, "ARTIST", artistId, new ArtistReviewConsumer(artist));
             return artist;
         }
     }
@@ -807,7 +849,13 @@ public final class Database {
 
     public static void rateArtist(int artistId, int userId, boolean verified, int stars, String comment) throws SQLException {
         try (Connection connection = connect()) {
-            insertReviewRaw(connection, userId, verified, "ARTIST", artistId, stars, comment == null ? "" : comment);
+            String reviewComment;
+            if (comment == null) {
+                reviewComment = "";
+            } else {
+                reviewComment = comment;
+            }
+            insertReviewRaw(connection, userId, verified, "ARTIST", artistId, stars, reviewComment);
             incrementReviewCountAndMaybeVerify(connection, userId);
         }
     }
@@ -833,7 +881,13 @@ public final class Database {
     public static void rateItem(String itemType, int itemId, int userId, boolean verified, int stars, String comment)
             throws SQLException {
         try (Connection connection = connect()) {
-            insertReviewRaw(connection, userId, verified, itemType, itemId, stars, comment == null ? "" : comment);
+            String reviewComment;
+            if (comment == null) {
+                reviewComment = "";
+            } else {
+                reviewComment = comment;
+            }
+            insertReviewRaw(connection, userId, verified, itemType, itemId, stars, reviewComment);
             incrementReviewCountAndMaybeVerify(connection, userId);
         }
     }
@@ -900,7 +954,7 @@ public final class Database {
                 }
             }
         }
-        entries.sort((a, b) -> b.savedAt().compareTo(a.savedAt()));
+        entries.sort(new ListenLaterEntryComparator());
         return entries;
     }
 
@@ -920,7 +974,7 @@ public final class Database {
                 }
             }
             loadStreamingLinksInto(connection, song);
-            loadReviewsInto(connection, "SONG", songId, song::addReview);
+            loadReviewsInto(connection, "SONG", songId, new SongReviewConsumer(song));
             return song;
         }
     }
@@ -946,12 +1000,12 @@ public final class Database {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         Song track = new Song(rs.getInt("id"), rs.getString("title"), album.getArtist(), rs.getInt("duration_seconds"));
-                        loadReviewsInto(connection, "SONG", track.getItemId(), track::addReview);
+                        loadReviewsInto(connection, "SONG", track.getItemId(), new SongReviewConsumer(track));
                         album.addSong(track);
                     }
                 }
             }
-            loadReviewsInto(connection, "ALBUM", albumId, album::addReview);
+            loadReviewsInto(connection, "ALBUM", albumId, new AlbumReviewConsumer(album));
             return album;
         }
     }
@@ -1050,8 +1104,15 @@ public final class Database {
                         + "END AS target_label "
                         + "FROM reviews r JOIN users u ON u.id = r.user_id ");
         if (onlyFollowed) {
+            StringBuilder followedIdList = new StringBuilder();
+            for (int i = 0; i < followedIds.size(); i++) {
+                if (i > 0) {
+                    followedIdList.append(",");
+                }
+                followedIdList.append(followedIds.get(i));
+            }
             sql.append("WHERE r.user_id IN (")
-                    .append(String.join(",", followedIds.stream().map(String::valueOf).toList()))
+                    .append(followedIdList)
                     .append(") ");
         }
         sql.append("ORDER BY r.priority_score DESC, r.created_at DESC LIMIT ?");
@@ -1093,4 +1154,50 @@ public final class Database {
         }
         return reviews;
     }
+    private static final class AlbumReviewConsumer implements Consumer<Review> {
+        private final Album album;
+
+        private AlbumReviewConsumer(Album album) {
+            this.album = album;
+        }
+
+        @Override
+        public void accept(Review review) {
+            album.addReview(review);
+        }
+    }
+
+    private static final class SongReviewConsumer implements Consumer<Review> {
+        private final Song song;
+
+        private SongReviewConsumer(Song song) {
+            this.song = song;
+        }
+
+        @Override
+        public void accept(Review review) {
+            song.addReview(review);
+        }
+    }
+
+    private static final class ArtistReviewConsumer implements Consumer<Review> {
+        private final Artist artist;
+
+        private ArtistReviewConsumer(Artist artist) {
+            this.artist = artist;
+        }
+
+        @Override
+        public void accept(Review review) {
+            artist.addReview(review);
+        }
+    }
+
+    private static final class ListenLaterEntryComparator implements Comparator<ListenLaterEntry> {
+        @Override
+        public int compare(ListenLaterEntry first, ListenLaterEntry second) {
+            return second.savedAt().compareTo(first.savedAt());
+        }
+    }
+
 }
