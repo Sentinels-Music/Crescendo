@@ -25,7 +25,7 @@ Before running the application, install:
 
 ## Architecture
 
-Crescendo uses an MVC-inspired layered structure:
+Crescendo uses an MVC-based layered structure:
 
 * **Model:** Represents users, artists, albums, songs, reviews, and tags.
 * **View:** Contains the JavaFX UI components and application pages.
