@@ -19,6 +19,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -374,7 +376,15 @@ public final class Database {
             ps.setInt(3, targetId);
             ps.setInt(4, stars);
             ps.setString(5, comment);
-            ps.setInt(6, verified ? 100 : 1);
+
+            int initialPriorityScore;
+            if (verified) {
+                initialPriorityScore = 100;
+            } else {
+                initialPriorityScore = 50;
+            }
+
+            ps.setInt(6, initialPriorityScore);
             ps.executeUpdate();
         }
     }
@@ -461,9 +471,12 @@ public final class Database {
         int id = rs.getInt("id");
         String username = rs.getString("username");
         String passwordHash = rs.getString("password_hash");
-        User user = rs.getBoolean("verified")
-                ? new VerifiedUser(id, username, passwordHash)
-                : new User(id, username, passwordHash);
+        User user;
+        if (rs.getBoolean("verified")) {
+            user = new VerifiedUser(id, username, passwordHash);
+        } else {
+            user = new User(id, username, passwordHash);
+        }
         user.setBio(rs.getString("bio"));
         user.setReviewCount(rs.getInt("review_count"));
         return user;
@@ -568,41 +581,72 @@ public final class Database {
     }
 
     /**
-     * Simple taste-match heuristic: percentage overlap between the two users' followed
-     * artists (shared followed artists / the larger of the two follow-lists). A stand-in
-     * for the full taste-matching algorithm described as Ege Yiğit Yıldırım's JOIN/aggregation work.
+     * Calculates the taste-match percentage using the distinct tags of the artists
+     * followed by each user:
+     *
+     * shared tags / current user's total tags * 100
+     *
+     * The first user is the current user, so the calculation is directional.
      */
-    public static int computeTasteMatch(int userIdA, int userIdB) throws SQLException {
+    public static int computeTasteMatch(int currentUserId, int otherUserId) throws SQLException {
         String sql = "SELECT "
-                + "(SELECT COUNT(*) FROM artist_follows af1 JOIN artist_follows af2 "
-                + "   ON af1.artist_id = af2.artist_id WHERE af1.user_id = ? AND af2.user_id = ?) AS shared, "
-                + "(SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS countA, "
-                + "(SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS countB";
+                + "(SELECT COUNT(DISTINCT at1.tag_id) "
+                + " FROM artist_follows af1 "
+                + " JOIN artist_tags at1 ON at1.artist_id = af1.artist_id "
+                + " WHERE af1.user_id = ? "
+                + " AND EXISTS ("
+                + "     SELECT 1 "
+                + "     FROM artist_follows af2 "
+                + "     JOIN artist_tags at2 ON at2.artist_id = af2.artist_id "
+                + "     WHERE af2.user_id = ? "
+                + "     AND at2.tag_id = at1.tag_id"
+                + " )) AS shared_tags, "
+                + "(SELECT COUNT(DISTINCT at.tag_id) "
+                + " FROM artist_follows af "
+                + " JOIN artist_tags at ON at.artist_id = af.artist_id "
+                + " WHERE af.user_id = ?) AS current_user_tags";
+
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, userIdA);
-            ps.setInt(2, userIdB);
-            ps.setInt(3, userIdA);
-            ps.setInt(4, userIdB);
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, otherUserId);
+            ps.setInt(3, currentUserId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
-                int shared = rs.getInt("shared");
-                int denominator = Math.max(rs.getInt("countA"), rs.getInt("countB"));
-                return denominator == 0 ? 0 : (int) Math.round(100.0 * shared / denominator);
+                int sharedTags = rs.getInt("shared_tags");
+                int currentUserTags = rs.getInt("current_user_tags");
+                if (currentUserTags == 0) {
+                    return 0;
+                }
+                return (int) Math.round(100.0 * sharedTags / currentUserTags);
             }
         }
     }
 
-    /** Names of artists both users follow - the "why" behind a taste-match percentage. */
-    public static List<String> getSharedArtistNames(int userIdA, int userIdB) throws SQLException {
-        String sql = "SELECT a.name FROM artist_follows af1 JOIN artist_follows af2 ON af1.artist_id = af2.artist_id "
-                + "JOIN artists a ON a.id = af1.artist_id WHERE af1.user_id = ? AND af2.user_id = ? ORDER BY a.name";
+    /** Returns the shared tags derived from the artists followed by both users. */
+    public static List<String> getSharedTagNames(int currentUserId, int otherUserId) throws SQLException {
+        String sql = "SELECT DISTINCT t.name "
+                + "FROM tags t "
+                + "JOIN artist_tags at1 ON at1.tag_id = t.id "
+                + "JOIN artist_follows af1 ON af1.artist_id = at1.artist_id "
+                + "WHERE af1.user_id = ? "
+                + "AND EXISTS ("
+                + "    SELECT 1 "
+                + "    FROM artist_tags at2 "
+                + "    JOIN artist_follows af2 ON af2.artist_id = at2.artist_id "
+                + "    WHERE af2.user_id = ? "
+                + "    AND at2.tag_id = t.id"
+                + ") "
+                + "ORDER BY t.name";
+
         List<String> names = new ArrayList<>();
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, userIdA);
-            ps.setInt(2, userIdB);
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, otherUserId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    names.add(rs.getString(1));
+                    names.add(rs.getString("name"));
                 }
             }
         }
@@ -686,7 +730,10 @@ public final class Database {
                         Album album = new Album(rs.getInt("id"), rs.getString("title"), artist, rs.getInt("release_year"));
                         albumsById.put(album.getItemId(), album);
                         artist.addMusicItem(album);
-                        loadReviewsInto(connection, "ALBUM", album.getItemId(), album::addReview);
+                        List<Review> albumReviews = loadReviews(connection, "ALBUM", album.getItemId());
+                        for (Review review : albumReviews) {
+                            album.addReview(review);
+                        }
                     }
                 }
             }
@@ -698,7 +745,10 @@ public final class Database {
                     while (rs.next()) {
                         Song song = new Song(rs.getInt("id"), rs.getString("title"), artist, rs.getInt("duration_seconds"));
                         loadStreamingLinksInto(connection, song);
-                        loadReviewsInto(connection, "SONG", song.getItemId(), song::addReview);
+                        List<Review> songReviews = loadReviews(connection, "SONG", song.getItemId());
+                        for (Review review : songReviews) {
+                            song.addReview(review);
+                        }
                         artist.addMusicItem(song);
                         int albumId = rs.getInt("album_id");
                         if (!rs.wasNull() && albumsById.containsKey(albumId)) {
@@ -708,7 +758,10 @@ public final class Database {
                 }
             }
 
-            loadReviewsInto(connection, "ARTIST", artistId, artist::addReview);
+            List<Review> artistReviews = loadReviews(connection, "ARTIST", artistId);
+            for (Review review : artistReviews) {
+                artist.addReview(review);
+            }
             return artist;
         }
     }
@@ -725,21 +778,33 @@ public final class Database {
         }
     }
 
-    private static void loadReviewsInto(Connection connection, String targetType, int targetId,
-                                         java.util.function.Consumer<Review> sink) throws SQLException {
-        String sql = "SELECT r.id, r.star_rating, r.comment, r.priority_score, u.username, u.verified "
+    private static List<Review> loadReviews(Connection connection, String targetType, int targetId)
+            throws SQLException {
+        String sql = "SELECT r.id, r.star_rating, r.comment, r.created_at, u.username, u.verified "
                 + "FROM reviews r JOIN users u ON u.id = r.user_id "
-                + "WHERE r.target_type = ? AND r.target_id = ? ORDER BY r.created_at DESC";
+                + "WHERE r.target_type = ? AND r.target_id = ?";
+
+        List<Review> reviews = new ArrayList<>();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, targetType);
             ps.setInt(2, targetId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    sink.accept(new Review(rs.getInt("id"), rs.getString("username"), rs.getInt("star_rating"),
-                            rs.getString("comment"), rs.getBoolean("verified")));
+                    Review review = new Review(
+                            rs.getInt("id"),
+                            rs.getString("username"),
+                            rs.getInt("star_rating"),
+                            rs.getString("comment"),
+                            rs.getTimestamp("created_at"),
+                            rs.getBoolean("verified")
+                    );
+                    reviews.add(review);
                 }
             }
         }
+
+        Collections.sort(reviews);
+        return reviews;
     }
 
     public static Tag addTag(int artistId, String tagName) throws SQLException {
@@ -807,7 +872,14 @@ public final class Database {
 
     public static void rateArtist(int artistId, int userId, boolean verified, int stars, String comment) throws SQLException {
         try (Connection connection = connect()) {
-            insertReviewRaw(connection, userId, verified, "ARTIST", artistId, stars, comment == null ? "" : comment);
+            String safeComment;
+            if (comment == null) {
+                safeComment = "";
+            } else {
+                safeComment = comment;
+            }
+
+            insertReviewRaw(connection, userId, verified, "ARTIST", artistId, stars, safeComment);
             incrementReviewCountAndMaybeVerify(connection, userId);
         }
     }
@@ -833,7 +905,14 @@ public final class Database {
     public static void rateItem(String itemType, int itemId, int userId, boolean verified, int stars, String comment)
             throws SQLException {
         try (Connection connection = connect()) {
-            insertReviewRaw(connection, userId, verified, itemType, itemId, stars, comment == null ? "" : comment);
+            String safeComment;
+            if (comment == null) {
+                safeComment = "";
+            } else {
+                safeComment = comment;
+            }
+
+            insertReviewRaw(connection, userId, verified, itemType, itemId, stars, safeComment);
             incrementReviewCountAndMaybeVerify(connection, userId);
         }
     }
@@ -900,7 +979,7 @@ public final class Database {
                 }
             }
         }
-        entries.sort((a, b) -> b.savedAt().compareTo(a.savedAt()));
+        Collections.sort(entries, new ListenLaterEntryComparator());
         return entries;
     }
 
@@ -920,7 +999,10 @@ public final class Database {
                 }
             }
             loadStreamingLinksInto(connection, song);
-            loadReviewsInto(connection, "SONG", songId, song::addReview);
+            List<Review> songReviews = loadReviews(connection, "SONG", songId);
+            for (Review review : songReviews) {
+                song.addReview(review);
+            }
             return song;
         }
     }
@@ -946,12 +1028,18 @@ public final class Database {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         Song track = new Song(rs.getInt("id"), rs.getString("title"), album.getArtist(), rs.getInt("duration_seconds"));
-                        loadReviewsInto(connection, "SONG", track.getItemId(), track::addReview);
+                        List<Review> trackReviews = loadReviews(connection, "SONG", track.getItemId());
+                        for (Review review : trackReviews) {
+                            track.addReview(review);
+                        }
                         album.addSong(track);
                     }
                 }
             }
-            loadReviewsInto(connection, "ALBUM", albumId, album::addReview);
+            List<Review> albumReviews = loadReviews(connection, "ALBUM", albumId);
+            for (Review review : albumReviews) {
+                album.addReview(review);
+            }
             return album;
         }
     }
@@ -1041,8 +1129,11 @@ public final class Database {
 
         boolean onlyFollowed = !followedIds.isEmpty();
         StringBuilder sql = new StringBuilder(
-                "SELECT r.star_rating, r.comment, r.priority_score, r.created_at, r.target_type, r.target_id, "
+                "SELECT r.star_rating, r.comment, r.created_at, r.target_type, r.target_id, "
                         + "u.username, u.verified, "
+                        + "(CASE WHEN u.verified THEN 55 ELSE 5 END "
+                        + " + GREATEST(45 - FLOOR(TIMESTAMPDIFF(DAY, r.created_at, CURRENT_TIMESTAMP) / 2), 0)) "
+                        + "AS calculated_priority_score, "
                         + "CASE r.target_type "
                         + "  WHEN 'ARTIST' THEN (SELECT name FROM artists WHERE id = r.target_id) "
                         + "  WHEN 'ALBUM' THEN (SELECT CONCAT(title, ' — ', (SELECT name FROM artists a2 WHERE a2.id = al.artist_id)) FROM albums al WHERE al.id = r.target_id) "
@@ -1051,10 +1142,10 @@ public final class Database {
                         + "FROM reviews r JOIN users u ON u.id = r.user_id ");
         if (onlyFollowed) {
             sql.append("WHERE r.user_id IN (")
-                    .append(String.join(",", followedIds.stream().map(String::valueOf).toList()))
+                    .append(joinIntegerValues(followedIds))
                     .append(") ");
         }
-        sql.append("ORDER BY r.priority_score DESC, r.created_at DESC LIMIT ?");
+        sql.append("ORDER BY calculated_priority_score DESC, r.created_at DESC LIMIT ?");
 
         List<FeedEntry> feed = new ArrayList<>();
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql.toString())) {
@@ -1072,14 +1163,18 @@ public final class Database {
 
     /** All reviews written by one user, newest first - used by the Profile page's "My Reviews" list. */
     public static List<FeedEntry> getReviewsByUser(int userId) throws SQLException {
-        String sql = "SELECT r.star_rating, r.comment, r.priority_score, r.created_at, r.target_type, r.target_id, "
+        String sql = "SELECT r.star_rating, r.comment, r.created_at, r.target_type, r.target_id, "
                 + "u.username, u.verified, "
+                + "(CASE WHEN u.verified THEN 55 ELSE 5 END "
+                + " + GREATEST(45 - FLOOR(TIMESTAMPDIFF(DAY, r.created_at, CURRENT_TIMESTAMP) / 2), 0)) "
+                + "AS calculated_priority_score, "
                 + "CASE r.target_type "
                 + "  WHEN 'ARTIST' THEN (SELECT name FROM artists WHERE id = r.target_id) "
                 + "  WHEN 'ALBUM' THEN (SELECT CONCAT(title, ' — ', (SELECT name FROM artists a2 WHERE a2.id = al.artist_id)) FROM albums al WHERE al.id = r.target_id) "
                 + "  WHEN 'SONG' THEN (SELECT CONCAT(title, ' — ', (SELECT name FROM artists a3 WHERE a3.id = s.artist_id)) FROM songs s WHERE s.id = r.target_id) "
                 + "END AS target_label "
-                + "FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.user_id = ? ORDER BY r.created_at DESC";
+                + "FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.user_id = ? "
+                + "ORDER BY calculated_priority_score DESC, r.created_at DESC";
         List<FeedEntry> reviews = new ArrayList<>();
         try (Connection connection = connect(); PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -1092,5 +1187,23 @@ public final class Database {
             }
         }
         return reviews;
+    }
+
+    private static String joinIntegerValues(List<Integer> values) {
+        StringBuilder result = new StringBuilder();
+        for (int index = 0; index < values.size(); index++) {
+            if (index > 0) {
+                result.append(",");
+            }
+            result.append(values.get(index));
+        }
+        return result.toString();
+    }
+
+    private static class ListenLaterEntryComparator implements Comparator<ListenLaterEntry> {
+        @Override
+        public int compare(ListenLaterEntry first, ListenLaterEntry second) {
+            return second.savedAt().compareTo(first.savedAt());
+        }
     }
 }

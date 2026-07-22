@@ -4,6 +4,8 @@ import com.crescendo.controller.AuthController;
 import com.crescendo.model.User;
 import com.crescendo.model.VerifiedUser;
 import javafx.geometry.Insets;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -17,6 +19,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -29,7 +33,7 @@ public final class TasteMatchView {
     private TasteMatchView() {
     }
 
-    private record Ranked(User user, int percent, List<String> shared, boolean following) {
+    private record Ranked(User user, int percent, List<String> sharedTags, boolean following) {
     }
 
     public static Parent build(Nav nav, AuthController authController, Runnable onRefresh) {
@@ -40,8 +44,8 @@ public final class TasteMatchView {
         heading.setTextFill(Color.web(Theme.INK));
         heading.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-font-family: '" + Theme.SANS_FONT + "';");
 
-        Label explainer = new Label("Ranked by how much your followed artists overlap with theirs."
-                + " Follow more artists on Discover to sharpen your matches.");
+        Label explainer = new Label("Ranked by the percentage of your tags shared with each user."
+                + " Your tags are determined by the artists you follow.");
         explainer.setTextFill(Color.web(Theme.MUTED));
         explainer.setStyle("-fx-font-size: 12px;");
         explainer.setWrapText(true);
@@ -50,11 +54,14 @@ public final class TasteMatchView {
         List<User> others = authController.getAllOtherUsers(me);
         List<User> followed = authController.getFollowedUsers(me);
 
-        List<Ranked> ranked = others.stream()
-                .map(other -> new Ranked(other, authController.computeTasteMatch(me, other),
-                        authController.getSharedArtists(me, other), followed.contains(other)))
-                .sorted((a, b) -> Integer.compare(b.percent(), a.percent()))
-                .toList();
+        List<Ranked> ranked = new ArrayList<>();
+        for (User other : others) {
+            int percent = authController.computeTasteMatch(me, other);
+            List<String> sharedTags = authController.getSharedTags(me, other);
+            boolean following = followed.contains(other);
+            ranked.add(new Ranked(other, percent, sharedTags, following));
+        }
+        ranked.sort(new RankedComparator());
 
         VBox list = new VBox(12);
         if (ranked.isEmpty()) {
@@ -93,10 +100,8 @@ public final class TasteMatchView {
             nameRow.getChildren().add(badge);
         }
 
-        List<String> shared = ranked.shared();
-        Label sharedLabel = Widgets.labelMuted(shared.isEmpty() ? "No shared followed artists yet"
-                : "Both follow " + String.join(", ", shared.stream().limit(3).toList())
-                        + (shared.size() > 3 ? " +" + (shared.size() - 3) + " more" : ""));
+        List<String> sharedTags = ranked.sharedTags();
+        Label sharedLabel = Widgets.labelMuted(buildSharedTagsText(sharedTags));
         sharedLabel.setWrapText(true);
         sharedLabel.setMaxWidth(320);
 
@@ -108,18 +113,18 @@ public final class TasteMatchView {
         VBox percentBlock = matchBar(ranked.percent());
 
         boolean following = ranked.following();
-        Button toggle = new Button(following ? "Following" : "Follow");
-        toggle.setStyle(following
-                ? "-fx-background-color: #EDE6D6; -fx-text-fill: " + Theme.MUTED + "; -fx-font-size: 11px; -fx-background-radius: 10; -fx-padding: 5 12 5 12;"
-                : "-fx-background-color: " + Theme.GOLD + "; -fx-text-fill: #11110E; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 12 5 12;");
-        toggle.setOnAction(e -> {
-            if (following) {
-                authController.unfollowUser(me, other);
-            } else {
-                authController.followUser(me, other);
-            }
-            onRefresh.run();
-        });
+        Button toggle = new Button();
+        if (following) {
+            toggle.setText("Following");
+            toggle.setStyle("-fx-background-color: #EDE6D6; -fx-text-fill: " + Theme.MUTED
+                    + "; -fx-font-size: 11px; -fx-background-radius: 10; -fx-padding: 5 12 5 12;");
+        } else {
+            toggle.setText("Follow");
+            toggle.setStyle("-fx-background-color: " + Theme.GOLD
+                    + "; -fx-text-fill: #11110E; -fx-font-size: 11px; -fx-font-weight: bold;"
+                    + " -fx-background-radius: 10; -fx-padding: 5 12 5 12;");
+        }
+        toggle.setOnAction(new FollowToggleHandler(authController, me, other, following, onRefresh));
 
         HBox row = new HBox(16, avatar, textBlock, spacer, percentBlock, toggle);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -127,6 +132,58 @@ public final class TasteMatchView {
         row.setStyle("-fx-background-color: white; -fx-background-radius: 12;"
                 + " -fx-border-color: " + Theme.BORDER + "; -fx-border-radius: 12;");
         return row;
+    }
+
+    private static String buildSharedTagsText(List<String> sharedTags) {
+        if (sharedTags.isEmpty()) {
+            return "No shared tags yet";
+        }
+
+        List<String> visibleTags = new ArrayList<>();
+        int visibleCount = Math.min(3, sharedTags.size());
+        for (int i = 0; i < visibleCount; i++) {
+            visibleTags.add(sharedTags.get(i));
+        }
+
+        String text = "Shared tags: " + String.join(", ", visibleTags);
+        if (sharedTags.size() > 3) {
+            text += " +" + (sharedTags.size() - 3) + " more";
+        }
+        return text;
+    }
+
+    private static final class RankedComparator implements Comparator<Ranked> {
+        @Override
+        public int compare(Ranked first, Ranked second) {
+            return Integer.compare(second.percent(), first.percent());
+        }
+    }
+
+    private static final class FollowToggleHandler implements EventHandler<ActionEvent> {
+        private final AuthController authController;
+        private final User currentUser;
+        private final User otherUser;
+        private final boolean following;
+        private final Runnable onRefresh;
+
+        private FollowToggleHandler(AuthController authController, User currentUser, User otherUser,
+                                    boolean following, Runnable onRefresh) {
+            this.authController = authController;
+            this.currentUser = currentUser;
+            this.otherUser = otherUser;
+            this.following = following;
+            this.onRefresh = onRefresh;
+        }
+
+        @Override
+        public void handle(ActionEvent event) {
+            if (following) {
+                authController.unfollowUser(currentUser, otherUser);
+            } else {
+                authController.followUser(currentUser, otherUser);
+            }
+            onRefresh.run();
+        }
     }
 
     private static VBox matchBar(int percent) {

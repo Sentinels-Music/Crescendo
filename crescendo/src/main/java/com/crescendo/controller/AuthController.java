@@ -117,18 +117,18 @@ public class AuthController {
         }
     }
 
-    public int computeTasteMatch(User a, User b) {
+    public int computeTasteMatch(User currentUser, User otherUser) {
         try {
-            return Database.computeTasteMatch(a.getUserId(), b.getUserId());
+            return Database.computeTasteMatch(currentUser.getUserId(), otherUser.getUserId());
         } catch (SQLException e) {
             throw wrap(e);
         }
     }
 
-    /** Artists both users follow - shown as the "why" behind a taste-match percentage. */
-    public List<String> getSharedArtists(User a, User b) {
+    /** Returns the shared tags behind the taste-match percentage. */
+    public List<String> getSharedTags(User currentUser, User otherUser) {
         try {
-            return Database.getSharedArtistNames(a.getUserId(), b.getUserId());
+            return Database.getSharedTagNames(currentUser.getUserId(), otherUser.getUserId());
         } catch (SQLException e) {
             throw wrap(e);
         }
